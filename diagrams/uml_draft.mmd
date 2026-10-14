@@ -1,0 +1,35 @@
+classDiagram
+    class Owner {
+        +int owner_id
+        +str name
+        +List~Pet~ pets
+        +add_pet(pet: Pet) void
+        +list_pets() List~Pet~
+    }
+
+    class Pet {
+        +int pet_id
+        +str name
+        +str species
+        +List~Task~ tasks
+        +add_task(task: Task) void
+        +list_tasks() List~Task~
+    }
+
+    class Task {
+        +str description
+        +datetime due_time
+        +bool is_complete
+        +mark_complete() void
+    }
+
+    class Scheduler {
+        +Owner owner
+        +get_all_tasks() List~Task~
+        +sort_tasks_by_due_time() List~Task~
+        +filter_incomplete_tasks() List~Task~
+    }
+
+    Owner "1" --> "0..*" Pet : owns
+    Pet "1" --> "0..*" Task : has
+    Scheduler --> Owner : accesses pets and their tasks
