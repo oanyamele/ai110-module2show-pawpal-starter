@@ -1,0 +1,42 @@
+classDiagram
+    class Owner {
+        +int owner_id
+        +str name
+        +List~Pet~ pets
+        +add_pet(pet: Pet) void
+        +list_pets() List~Pet~
+        +list_tasks() List~Task~
+    }
+
+    class Pet {
+        +int pet_id
+        +str name
+        +str species
+        +List~Task~ tasks
+        +add_task(task: Task) void
+        +list_tasks() List~Task~
+    }
+
+    class Task {
+        +str description
+        +datetime due_time
+        +bool is_complete
+        +str frequency
+        +mark_complete() void
+    }
+
+    class Scheduler {
+        +Owner owner
+        +get_all_tasks() List~Task~
+        +sort_tasks_by_due_time() List~Task~
+        +filter_incomplete_tasks() List~Task~
+        +filter_tasks(pet_name: str, is_complete: bool | None = None) List~Task~
+        +mark_task_complete(pet: Pet, task: Task) Task | None
+        +find_conflicts() List~str~
+    }
+
+    Owner "1" --> "0..*" Pet : pets
+    Pet "1" --> "0..*" Task : tasks
+    Scheduler "1" --> "1" Owner : owner
+    Scheduler ..> Pet : filters and completes tasks
+    Scheduler ..> Task : sorts and detects conflicts

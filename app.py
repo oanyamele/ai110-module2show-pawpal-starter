@@ -201,3 +201,13 @@ if st.button("Generate schedule"):
         st.caption(
             f"{len(incomplete_tasks)} incomplete task(s) for this date."
         )
+
+        conflicts = scheduler.find_conflicts()
+
+        st.subheader("Schedule Conflict Check")
+
+        if conflicts:
+            for conflict in conflicts:
+                st.warning(f"⚠️ {conflict}")
+        else:
+            st.success("No scheduling conflicts detected!")

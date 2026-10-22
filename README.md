@@ -102,12 +102,13 @@ tests/test_pawpal.py ..............                                      [100%]
 
 ## 📸 Demo Walkthrough
 
-Describe your app in numbered steps so a reader can follow along without watching a video:
+PawPal+ is a Streamlit application that helps a pet owner organize pet care activities and review a schedule.
 
-1. <!-- Describe this step -->
-2. <!-- Describe this step -->
-3. <!-- Describe this step -->
-4. <!-- Describe this step -->
-5. <!-- Add more steps as needed -->
+Using the Streamlit App
+Enter owner information: Update the owner's name in the Pet Profile section.
+Add pets: Enter a pet's name, select its species, and click Add Pet. Added pets remain available during the Streamlit session.
+Schedule tasks: Select a pet, enter a task description, choose its date and time, select a frequency (once, daily, or weekly), and click Add task.
+View the schedule: Select a date and click Generate schedule. Tasks scheduled for that date are displayed in chronological order, with their completion status.
+Check for conflicts: The scheduler checks tasks across the owner's pets and displays warnings when two or more tasks have exactly the same due date and time. If no conflicts are detected, the app displays a success message.
 
 **Screenshot or video** *(optional)*: <!-- Insert a screenshot or link to a demo video here -->
