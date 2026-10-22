@@ -41,6 +41,7 @@ def main() -> None:
 	next_walk = scheduler.mark_task_complete(buddy, buddy_walk)
 	all_tasks = scheduler.get_all_tasks()
 	sorted_tasks = scheduler.sort_tasks_by_due_time()
+	priority_tasks = scheduler.sort_tasks_by_priority()
 	incomplete_tasks = scheduler.filter_incomplete_tasks()
 	buddy_incomplete_tasks = scheduler.filter_tasks("Buddy", is_complete=False)
 	pet_names = {
@@ -49,23 +50,60 @@ def main() -> None:
 		for task in pet.list_tasks()
 	}
 
-	print(f"Today's Schedule ({schedule_date:%A, %B %d, %Y})")
-	print(f"Owner: {owner.name} | Tasks: {len(all_tasks)}")
-	print("DUE TIME             PET      TASK                  FREQUENCY      STATUS")
-	print("-------------------  -------  --------------------  -------------  ----------")
+	priority_icons = {
+        "high": "🔴 HIGH",
+        "medium": "🟡 MEDIUM",
+        "low": "🟢 LOW",
+    }
+
+	print("=" * 100)
+	print("🐾 PAWPAL+ | PET CARE SCHEDULER")
+	print("=" * 100)
+	print(f"📅 Schedule Date: ({schedule_date:%A, %B %d, %Y})")
+	print(f"👤 Owner: {owner.name} | 📋 Tasks: {len(all_tasks)}")
+	print(f"🐶 Pets: {len(owner.list_pets())} ")
+
+	print("\n📅 CHRONOLOGICAL SCHEDULE")
+	print("-" * 100)
+	print(
+        f"{'DUE TIME':<19} {'PET':<9} {'TASK':<22} "
+        f"{'PRIORITY':<12} {'STATUS':<12}"
+    )
+	print("-" * 100)
+	
 	for task in sorted_tasks:
-		status = "Complete" if task.is_complete else "Incomplete"
+		status = "✅ Complete" if task.is_complete else "❌ Incomplete"
+		priority = priority_icons.get(
+            task.priority.lower(), "⚪ UNKNOWN"
+        )
 		print(
 			f"{task.due_time:%Y-%m-%d %H:%M}  {pet_names[id(task)]:<7}  "
 			f"{task.description:<20}  {task.frequency:<13}  {status}"
 		)
 	if next_walk is not None:
+		print("\n🔁 RECURRING TASK")
 		print(
 			f"\nNext occurrence: {next_walk.description} for Buddy at "
 			f"{next_walk.due_time:%Y-%m-%d %H:%M}"
 		)
 
-	print(f"\nIncomplete Tasks ({len(incomplete_tasks)})")
+	print("\n⭐ PRIORITY-BASED SCHEDULE")
+	print("-" * 100)
+	print(f"{'PRIORITY':<14} {'DUE TIME':<19} {'PET':<9} TASK")
+	print("-" * 100)
+
+	for task in priority_tasks:
+		priority = priority_icons.get(
+        	task.priority.lower(), "⚪ UNKNOWN"
+    	)
+		print(
+            f"{priority:<14} "
+            f"{task.due_time:%Y-%m-%d %H:%M}  "
+            f"{pet_names[id(task)]:<9} {task.description}"
+        )
+
+	print(f"\n⏳ Incomplete Tasks ({len(incomplete_tasks)})")
+	print("-" * 100)
 	for task in incomplete_tasks:
 		print(
 			f"{task.due_time:%H:%M}  {pet_names[id(task)]}: "
@@ -76,31 +114,19 @@ def main() -> None:
 	for task in buddy_incomplete_tasks:
 		print(f"{task.due_time:%Y-%m-%d %H:%M}  {task.description}")
 
-	print("\nSchedule Conflicts")
+	print("\n⚠️ Schedule Conflicts")
+	print("-" * 100)
 	conflict_warnings = scheduler.find_conflicts()
 	if conflict_warnings:
 		for warning in conflict_warnings:
 			print(warning)
 	else:
-		print("No conflicts found.")
+		print("✅ No conflicts found.")
 
-	print("\nPriority-Based Schedule")
 
-	priority_tasks = scheduler.sort_tasks_by_priority()
-
-	print("PRIORITY  DUE TIME             PET      TASK")
-	print("--------  -------------------  -------  --------------------")
-
-	for task in priority_tasks:
-		priority = task.priority.upper()
-		pet_name = pet_names[id(task)]
-
-		print(
-			f"{priority:<8}  "
-			f"{task.due_time:%Y-%m-%d %H:%M}  "
-			f"{pet_name:<7}  "
-			f"{task.description}"
-		)
+	print("\n" + "=" * 100)
+	print("🐾 End of PawPal+ schedule")
+	print("=" * 100)
 
 
 if __name__ == "__main__":

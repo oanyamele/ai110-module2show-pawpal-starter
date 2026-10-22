@@ -26,42 +26,41 @@ if "next_pet_id" not in st.session_state:
 owner = st.session_state.owner
 
 st.title("🐾 PawPal+")
+st.caption("Your pet care planner — organised, prioritised, and easy to follow.")
 
 st.markdown(
     """
 Welcome to the PawPal+ starter app.
 
-This file is intentionally thin. It gives you a working Streamlit app so you can start quickly,
-but **it does not implement the project logic**. Your job is to design the system and build it.
-
-Use this app as your interactive demo once your backend classes/functions exist.
+Add your pets, schedule their care tasks, set priorities, and
+review upcoming activities. PawPal+ also identifies tasks that
+share the same scheduled date and time.
 """
 )
 
-with st.expander("Scenario", expanded=True):
+st.divider()
+summary_col1, summary_col2 = st.columns(2)
+
+with summary_col1:
+    st.metric("🐾 Registered pets", len(owner.list_pets()))
+
+with summary_col2:
+    total_tasks = len(owner.list_tasks())
+    st.metric("📋 Total tasks", total_tasks)
+
+
+with st.expander("Scenario", expanded=False):
     st.markdown(
         """
-**PawPal+** is a pet care planning assistant. It helps a pet owner plan care tasks
-for their pet(s) based on constraints like time, priority, and preferences.
-
-You will design and implement the scheduling logic and connect it to this Streamlit UI.
-"""
-    )
-
-with st.expander("What you need to build", expanded=True):
-    st.markdown(
-        """
-At minimum, your system should:
-- Represent pet care tasks (what needs to happen, how long it takes, priority)
-- Represent the pet and the owner (basic info and preferences)
-- Build a plan/schedule for a day that chooses and orders tasks based on constraints
-- Explain the plan (why each task was chosen and when it happens)
+**PawPal+** helps a pet owner organise care activities across
+multiple pets. Tasks can have due dates, recurrence frequencies,
+and priority levels.
 """
     )
 
 st.divider()
 
-st.subheader("Your Pet Profile")
+st.subheader("👤 Your Pet Profile")
 
 owner_name = st.text_input(
     "Owner name",
@@ -76,7 +75,7 @@ if owner.name != owner_name:
 pet_name = st.text_input("Pet name", value="Mochi")
 species = st.selectbox("Species", ["dog", "cat", "other"])
 
-if st.button("Add Pet"):
+if st.button("➕ Add Pet"):
     if pet_name.strip():
         new_pet = Pet(
             pet_id=st.session_state.next_pet_id,
@@ -88,7 +87,7 @@ if st.button("Add Pet"):
         owner.save_to_json(DATA_FILE)
         st.session_state.next_pet_id += 1
 
-        st.success(f"{new_pet.name} was added!")
+        st.success(f"🐾 {new_pet.name} was added!")
     else:
         st.error("Please enter a pet name.")
 
@@ -98,7 +97,7 @@ if owner.list_pets():
     for pet in owner.list_pets():
         st.write(f"🐾 **{pet.name}** — {pet.species}")
 else:
-    st.info("No pets added yet.")
+    st.info("No pets added yet. Add a pet above.")
 
 st.divider()
 
@@ -108,6 +107,8 @@ if not pets:
     st.info("Add a pet before scheduling tasks.")
 
 else:
+    st.subheader("📝 Schedule a Care Task")
+
     pet_options = {
         f"{pet.name} ({pet.species})": pet
         for pet in pets
@@ -128,7 +129,17 @@ else:
         ["once", "daily", "weekly"],
     )
 
-    if st.button("Add task"):
+    priority = st.selectbox(
+        "Priority",
+        ["high", "medium", "low"],
+        format_func=lambda value: {
+            "high": "🔴 High",
+            "medium": "🟡 Medium",
+            "low": "🟢 Low",
+        }[value],
+    )
+
+    if st.button("➕ Add task"):
         if task_title.strip():
             due_time = datetime.combine(task_date, task_time)
 
@@ -136,37 +147,48 @@ else:
                 description=task_title.strip(),
                 due_time=due_time,
                 frequency=frequency,
+                priority=priority,
             )
 
             selected_pet.add_task(new_task)
             owner.save_to_json(DATA_FILE)
 
             st.success(
-                f"Added '{new_task.description}' for "
+                f"✅ Added '{new_task.description}' for "
                 f"{selected_pet.name}!"
             )
         else:
             st.error("Please enter a task title.")
 
-    st.subheader("Current Tasks")
+    st.subheader("📋 Current Tasks")
+
+    priority_labels = {
+        "high": "🔴 High",
+        "medium": "🟡 Medium",
+        "low": "🟢 Low",
+    }
 
     for pet in owner.list_pets():
-        st.write(f"**{pet.name}'s tasks**")
+        st.write(f"** 🐾 {pet.name}'s tasks**")
 
         pet_tasks = pet.list_tasks()
 
         if pet_tasks:
             for task_index, task in enumerate(pet_tasks):
-                status = "Completed" if task.is_complete else "Pending"
+                status = "✅ Completed" if task.is_complete else "⏳ Pending"
 
+                task_priority = priority_labels.get(
+                    task.priority.lower(), "⚪ Unknown"
+                )
+                
                 st.write(
                     f"- {task.description} — "
-                    f"{task.due_time.strftime('%b %d, %Y %I:%M %p')} "
-                    f"({task.frequency}, {status})"
+                    f"🕒 {task.due_time.strftime('%b %d, %Y %I:%M %p')} "
+                    f"| 🔁 ({task.frequency}, {status})"
                 )
 
                 if not task.is_complete and st.button(
-                    f"Mark '{task.description}' complete",
+                    f"✅ Mark '{task.description}' complete",
                     key=f"complete-{pet.pet_id}-{task_index}",
                 ):
                     Scheduler(owner).mark_task_complete(pet, task)
@@ -177,7 +199,7 @@ else:
 
 st.divider()
 
-st.subheader("Build Schedule")
+st.subheader("📅 Build Schedule")
 st.caption("Generate an ordered schedule from your pets' care tasks.")
 
 schedule_date = st.date_input(
@@ -186,10 +208,19 @@ schedule_date = st.date_input(
     key="schedule_date",
 )
 
-if st.button("Generate schedule"):
+schedule_view = st.radio(
+    "Schedule view",
+    ["Chronological", "Priority-based"],
+    horizontal=True,
+)
+
+if st.button("📅 Generate schedule"):
     scheduler = Scheduler(owner)
 
-    all_tasks = scheduler.sort_tasks_by_due_time()
+    if schedule_view == "Priority-based":
+        all_tasks = scheduler.sort_tasks_by_priority()
+    else:
+        all_tasks = scheduler.sort_tasks_by_due_time()
 
     scheduled_tasks = [
         task
@@ -207,8 +238,12 @@ if st.button("Generate schedule"):
         )
 
         for task in scheduled_tasks:
-            status = "Completed" if task.is_complete else "Pending"
+            status = "✅ Completed" if task.is_complete else "⏳ Pending"
 
+            task_priority = priority_labels.get(
+                task.priority.lower(), "⚪ Unknown"
+            )
+            
             st.write(
                 f"**{task.due_time.strftime('%I:%M %p')}** — "
                 f"{task.description} ({status})"
@@ -220,15 +255,28 @@ if st.button("Generate schedule"):
         ]
 
         st.caption(
-            f"{len(incomplete_tasks)} incomplete task(s) for this date."
+            f"⏳ {len(incomplete_tasks)} incomplete task(s) for this date."
         )
 
         conflicts = scheduler.find_conflicts()
 
-        st.subheader("Schedule Conflict Check")
+        st.subheader("⚠️ Schedule Conflict Check")
 
         if conflicts:
             for conflict in conflicts:
                 st.warning(f"⚠️ {conflict}")
         else:
-            st.success("No scheduling conflicts detected!")
+            st.success("✅ No scheduling conflicts detected!")
+
+with st.expander("ℹ️ Priority guide"):
+    st.markdown(
+        """
+        - 🔴 **High:** Tasks that need greater attention.
+        - 🟡 **Medium:** Standard-priority tasks.
+        - 🟢 **Low:** Lower-priority tasks.
+
+        The priority-based schedule orders tasks by priority first,
+        then by due date and time. The chronological schedule orders
+        tasks by due date and time.
+        """
+    )

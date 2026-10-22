@@ -119,6 +119,18 @@ The app saves after owner-name changes, adding pets or tasks, and completing tas
 
 Automated tests in tests/test_pawpal.py verify that multiple pets and their task details survive a save-and-load round trip. Additional tests cover missing files, malformed JSON, and invalid task dates, and test are ran with python -m pytest
 
+## Professional Output Formatting
+
+PawPal+ uses emojis and clear labels to make schedules easier to read.
+
+1. 🔴 High, 🟡 Medium, and 🟢 Low show task priorities.
+2. ✅ Completed and ⏳ Pending show task status.
+3. 📅 Dates and times are clearly displayed.
+4. ⚠️ Warnings alert users when tasks are scheduled at the same time.
+5. The app shows the number of pets and tasks.
+The command-line output uses headings, lines, and emojis to organise the schedule.
+In app.py, Streamlit components such as st.metric(), st.success(), and st.warning() help display information clearly. In main.py, formatted print statements and emojis make the schedule easier to follow.
+
 ## 🧪 Testing PawPal+
 
 ```bash
