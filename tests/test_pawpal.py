@@ -192,3 +192,26 @@ def test_mark_task_complete_rejects_pet_not_owned_by_scheduler_owner() -> None:
 		Scheduler(owner).mark_task_complete(foreign_pet, task)
 
 	assert task.is_complete is False
+
+
+def test_scheduler_handles_owner_with_no_tasks() -> None:
+    owner = Owner(1, "Alex")
+    pet = Pet(1, "Buddy", "Dog")
+    owner.add_pet(pet)
+
+    scheduler = Scheduler(owner)
+
+    assert scheduler.sort_tasks_by_due_time() == []
+    assert scheduler.filter_tasks("Buddy") == []
+    assert scheduler.find_conflicts() == []
+
+
+def test_find_conflicts_returns_no_warnings_for_different_times() -> None:
+    owner = Owner(1, "Alex")
+    pet = Pet(1, "Buddy", "Dog")
+
+    pet.add_task(Task("Breakfast", datetime(2026, 10, 14, 8, 0)))
+    pet.add_task(Task("Walk", datetime(2026, 10, 14, 9, 0)))
+    owner.add_pet(pet)
+
+    assert Scheduler(owner).find_conflicts() == []

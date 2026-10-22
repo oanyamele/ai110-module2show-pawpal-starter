@@ -61,22 +61,6 @@ Incomplete Tasks (2)
 09:00  Luna: Brush coat (weekly)
 ```
 
-## 🧪 Testing PawPal+
-
-```bash
-# Run the full test suite:
-pytest
-
-# Run with coverage:
-pytest --cov
-```
-
-Sample test output:
-
-```
-# Paste your pytest output here
-```
-
 ## 📐 Smarter Scheduling
 
 The `Scheduler` collects tasks across an owner's pets and provides these scheduling algorithms:
@@ -87,6 +71,34 @@ The `Scheduler` collects tasks across an owner's pets and provides these schedul
 | Filtering | `filter_tasks(pet_name, is_complete=None)` | Returns tasks for the named pet. Pass `True` or `False` to filter by completion status, or omit it to include both statuses. `filter_incomplete_tasks()` returns incomplete tasks across all pets. |
 | Recurring tasks | `mark_task_complete(pet, task)` | Verifies that the task belongs to the specified pet, marks it complete, then adds one next occurrence for `daily` (+1 day) or `weekly` (+7 days) tasks. One-time and unsupported frequencies do not recur; completing an already-completed task again does not add a duplicate. |
 | Conflict detection | `find_conflicts()` | Returns readable warning strings for tasks that share the exact same date and time, including their descriptions and pet names. Conflicts are reported rather than raised as errors. |
+
+
+## 🧪 Testing PawPal+
+
+```bash
+# Run the full test suite:
+python -m pytest
+
+# Run with coverage:
+pytest --cov
+```
+
+Sample test output:
+python -m pytest
+============================= test session starts ==============================
+platform darwin -- Python 3.13.5, pytest-9.1.1, pluggy-1.6.0
+rootdir: /Users/ogechi/Desktop/ai110-module2show-pawpal-starter
+plugins: anyio-4.15.1
+collected 14 items                                                             
+
+tests/test_pawpal.py ..............                                      [100%]
+
+============================== 14 passed in 0.05s ==============================
+
+```
+# Confidence Level: 4/5 (The current tests cover the bases, however if there are more features then more tests might be necessary)
+
+
 
 ## 📸 Demo Walkthrough
 
