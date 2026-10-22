@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from pawpal_system import Owner, Pet, Scheduler, Task
 
@@ -15,6 +15,7 @@ def main() -> None:
 		datetime(2026, 10, 14, 7, 30),
 		frequency="daily",
 		priority="high",
+		duration=timedelta(minutes=30),
 	)
 
 	buddy_meal = Task(
@@ -22,6 +23,7 @@ def main() -> None:
 		datetime(2026, 10, 14, 8, 0),
 		frequency="twice daily",
 		priority="medium",
+		duration=timedelta(minutes=30),
 	)
 
 	luna_grooming = Task(
@@ -29,6 +31,7 @@ def main() -> None:
 		datetime(2026, 10, 14, 7, 30),
 		frequency="weekly",
 		priority="low",
+		duration=timedelta(minutes=45),
 	)
 
 	buddy.add_task(buddy_walk)
@@ -122,6 +125,15 @@ def main() -> None:
 			print(warning)
 	else:
 		print("✅ No conflicts found.")
+
+	print("\n🕒 NEXT AVAILABLE 30-MINUTE SLOT")
+	requested_start = datetime(2026, 10, 14, 7, 45)
+	available_start = scheduler.find_next_available_slot(
+		requested_start,
+		timedelta(minutes=30),
+	)
+	print(f"Requested: {requested_start:%Y-%m-%d %H:%M}")
+	print(f"Available: {available_start:%Y-%m-%d %H:%M}")
 
 
 	print("\n" + "=" * 100)

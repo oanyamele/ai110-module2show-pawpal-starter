@@ -41,6 +41,11 @@ class Owner:
 							"is_complete": task.is_complete,
 							"frequency": task.frequency,
 							"priority": task.priority,
+							"duration_seconds": (
+								task.duration.total_seconds()
+								if task.duration is not None
+								else None
+							),
 						}
 						for task in pet.list_tasks()
 					],
@@ -100,6 +105,16 @@ class Owner:
 				is_complete = require_value(task_data, "is_complete", bool)
 				frequency = require_value(task_data, "frequency", str)
 				priority = require_value(task_data, "priority", str)
+				duration_seconds = task_data.get("duration_seconds")
+				if duration_seconds is not None and (
+					isinstance(duration_seconds, bool)
+					or not isinstance(duration_seconds, (int, float))
+					or duration_seconds <= 0
+				):
+					raise ValueError(
+						f"Invalid owner data: 'duration_seconds' for task "
+						f"'{description}' must be a positive number or null."
+					)
 				try:
 					due_time = datetime.fromisoformat(due_time_text)
 				except ValueError as error:
@@ -114,6 +129,11 @@ class Owner:
 						is_complete=is_complete,
 						frequency=frequency,
 						priority=priority,
+						duration=(
+							timedelta(seconds=duration_seconds)
+							if duration_seconds is not None
+							else None
+						),
 					)
 				)
 			pets.append(
@@ -150,6 +170,7 @@ class Task:
 	is_complete: bool = False
 	frequency: str = "once"
 	priority: str = "medium"
+	duration: timedelta | None = None
 
 	def mark_complete(self) -> None:
 		"""Mark this task as complete."""
@@ -226,9 +247,40 @@ class Scheduler:
 			due_time=task.due_time + delta,
 			frequency=task.frequency,
 			priority=task.priority,
+			duration=task.duration,
 		)
 		pet.add_task(next_task)
 		return next_task
+
+	def find_next_available_slot(
+		self,
+		requested_start: datetime,
+		duration: timedelta,
+	) -> datetime:
+		"""Find the earliest non-overlapping slot using known task durations."""
+		if duration <= timedelta(0):
+			raise ValueError("Proposed task duration must be greater than zero.")
+
+		existing_tasks = [
+			task for task in self.get_all_tasks() if not task.is_complete
+		]
+		for task in existing_tasks:
+			if task.duration is None:
+				raise ValueError(
+					f"Task '{task.description}' has no duration; "
+					"set durations for unfinished tasks before finding an available slot."
+				)
+
+		candidate_start = requested_start
+		for task in sorted(existing_tasks, key=lambda existing: existing.due_time):
+			task_end = task.due_time + task.duration
+			candidate_end = candidate_start + duration
+			if candidate_end <= task.due_time:
+				break
+			if candidate_start < task_end:
+				candidate_start = task_end
+
+		return candidate_start
 
 	def find_conflicts(self) -> list[str]:
 		"""Return readable warnings for tasks sharing an exact due time."""

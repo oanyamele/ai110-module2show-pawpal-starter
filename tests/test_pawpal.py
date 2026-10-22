@@ -97,7 +97,12 @@ def test_mark_task_complete_creates_next_recurring_occurrence(
 ) -> None:
 	owner = Owner(1, "Alex")
 	pet = Pet(1, "Buddy", "Dog")
-	task = Task("Medication", datetime(2026, 10, 14, 8, 30), frequency=frequency)
+	task = Task(
+		"Medication",
+		datetime(2026, 10, 14, 8, 30),
+		frequency=frequency,
+		duration=timedelta(minutes=20),
+	)
 	pet.add_task(task)
 	owner.add_pet(pet)
 
@@ -107,6 +112,7 @@ def test_mark_task_complete_creates_next_recurring_occurrence(
 	assert next_task is not None
 	assert next_task.description == task.description
 	assert next_task.frequency == frequency
+	assert next_task.duration == task.duration
 	assert next_task.due_time == datetime(2026, 10, 14, 8, 30) + timedelta(days=days)
 	assert next_task.is_complete is False
 	assert pet.list_tasks() == [task, next_task]
@@ -273,6 +279,7 @@ def test_owner_json_round_trip_preserves_multiple_pets_and_task_fields(tmp_path)
 			is_complete=True,
 			frequency="daily",
 			priority="high",
+			duration=timedelta(minutes=30),
 		)
 	)
 	cat.add_task(
@@ -281,6 +288,7 @@ def test_owner_json_round_trip_preserves_multiple_pets_and_task_fields(tmp_path)
 			datetime(2026, 10, 15, 9, 15),
 			frequency="weekly",
 			priority="low",
+			duration=timedelta(minutes=45),
 		)
 	)
 	owner.add_pet(dog)
@@ -304,11 +312,13 @@ def test_owner_json_round_trip_preserves_multiple_pets_and_task_fields(tmp_path)
 	assert restored_medication.is_complete is True
 	assert restored_medication.frequency == "daily"
 	assert restored_medication.priority == "high"
+	assert restored_medication.duration == timedelta(minutes=30)
 	restored_grooming = restored_pets[1].list_tasks()[0]
 	assert restored_grooming.due_time == datetime(2026, 10, 15, 9, 15)
 	assert restored_grooming.is_complete is False
 	assert restored_grooming.frequency == "weekly"
 	assert restored_grooming.priority == "low"
+	assert restored_grooming.duration == timedelta(minutes=45)
 
 
 def test_owner_load_from_json_returns_none_for_missing_file(tmp_path) -> None:
@@ -337,3 +347,78 @@ def test_owner_load_from_json_rejects_invalid_task_datetime(tmp_path) -> None:
 
 	with pytest.raises(ValueError, match="invalid due_time"):
 		Owner.load_from_json(invalid_file)
+
+
+def test_find_next_available_slot_returns_requested_time_when_available() -> None:
+	owner = Owner(1, "Alex")
+	pet = Pet(1, "Buddy", "Dog")
+	pet.add_task(
+		Task(
+			"Morning walk",
+			datetime(2026, 10, 14, 8, 0),
+			duration=timedelta(minutes=30),
+		)
+	)
+	owner.add_pet(pet)
+
+	available_start = Scheduler(owner).find_next_available_slot(
+		datetime(2026, 10, 14, 9, 0),
+		timedelta(minutes=30),
+	)
+
+	assert available_start == datetime(2026, 10, 14, 9, 0)
+
+
+def test_find_next_available_slot_moves_after_conflict() -> None:
+	owner = Owner(1, "Alex")
+	pet = Pet(1, "Buddy", "Dog")
+	pet.add_task(
+		Task(
+			"Walk",
+			datetime(2026, 10, 14, 8, 0),
+			duration=timedelta(hours=1),
+		)
+	)
+	owner.add_pet(pet)
+
+	available_start = Scheduler(owner).find_next_available_slot(
+		datetime(2026, 10, 14, 8, 30),
+		timedelta(minutes=30),
+	)
+
+	assert available_start == datetime(2026, 10, 14, 9, 0)
+
+
+def test_find_next_available_slot_checks_tasks_across_pets() -> None:
+	owner = Owner(1, "Alex")
+	dog = Pet(1, "Buddy", "Dog")
+	cat = Pet(2, "Luna", "Cat")
+	cat.add_task(
+		Task(
+			"Grooming",
+			datetime(2026, 10, 14, 10, 0),
+			duration=timedelta(minutes=45),
+		)
+	)
+	owner.add_pet(dog)
+	owner.add_pet(cat)
+
+	available_start = Scheduler(owner).find_next_available_slot(
+		datetime(2026, 10, 14, 10, 15),
+		timedelta(minutes=30),
+	)
+
+	assert available_start == datetime(2026, 10, 14, 10, 45)
+
+
+def test_find_next_available_slot_rejects_unknown_existing_duration() -> None:
+	owner = Owner(1, "Alex")
+	pet = Pet(1, "Buddy", "Dog")
+	pet.add_task(Task("Walk", datetime(2026, 10, 14, 8, 0)))
+	owner.add_pet(pet)
+
+	with pytest.raises(ValueError, match="has no duration"):
+		Scheduler(owner).find_next_available_slot(
+			datetime(2026, 10, 14, 8, 15),
+			timedelta(minutes=30),
+		)
