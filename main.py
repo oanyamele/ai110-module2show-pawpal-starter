@@ -10,9 +10,26 @@ def main() -> None:
 	buddy = Pet(pet_id=1, name="Buddy", species="Dog")
 	luna = Pet(pet_id=2, name="Luna", species="Cat")
 
-	buddy_walk = Task("Morning walk", datetime(2026, 10, 14, 7, 30), frequency="daily")
-	buddy_meal = Task("Breakfast", datetime(2026, 10, 14, 8, 0), frequency="twice daily")
-	luna_grooming = Task("Brush coat", datetime(2026, 10, 14, 7, 30), frequency="weekly")
+	buddy_walk = Task(
+		"Morning walk",
+		datetime(2026, 10, 14, 7, 30),
+		frequency="daily",
+		priority="high",
+	)
+
+	buddy_meal = Task(
+		"Breakfast",
+		datetime(2026, 10, 14, 8, 0),
+		frequency="twice daily",
+		priority="medium",
+	)
+
+	luna_grooming = Task(
+		"Brush coat",
+		datetime(2026, 10, 14, 7, 30),
+		frequency="weekly",
+		priority="low",
+	)
 
 	buddy.add_task(buddy_walk)
 	buddy.add_task(buddy_meal)
@@ -66,6 +83,24 @@ def main() -> None:
 			print(warning)
 	else:
 		print("No conflicts found.")
+
+	print("\nPriority-Based Schedule")
+
+	priority_tasks = scheduler.sort_tasks_by_priority()
+
+	print("PRIORITY  DUE TIME             PET      TASK")
+	print("--------  -------------------  -------  --------------------")
+
+	for task in priority_tasks:
+		priority = task.priority.upper()
+		pet_name = pet_names[id(task)]
+
+		print(
+			f"{priority:<8}  "
+			f"{task.due_time:%Y-%m-%d %H:%M}  "
+			f"{pet_name:<7}  "
+			f"{task.description}"
+		)
 
 
 if __name__ == "__main__":

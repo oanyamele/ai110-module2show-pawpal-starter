@@ -215,3 +215,47 @@ def test_find_conflicts_returns_no_warnings_for_different_times() -> None:
     owner.add_pet(pet)
 
     assert Scheduler(owner).find_conflicts() == []
+
+
+def test_scheduler_sorts_by_priority_then_due_time() -> None:
+    owner = Owner(1, "Alex")
+    dog = Pet(1, "Buddy", "Dog")
+    cat = Pet(2, "Luna", "Cat")
+
+    low_task = Task(
+        "Grooming",
+        datetime(2026, 10, 14, 7, 0),
+        priority="low",
+    )
+    high_late = Task(
+        "Evening medication",
+        datetime(2026, 10, 14, 18, 0),
+        priority="high",
+    )
+    high_early = Task(
+        "Morning medication",
+        datetime(2026, 10, 14, 8, 0),
+        priority="high",
+    )
+    medium_task = Task(
+        "Feeding",
+        datetime(2026, 10, 14, 9, 0),
+        priority="medium",
+    )
+
+    dog.add_task(low_task)
+    dog.add_task(high_late)
+    cat.add_task(high_early)
+    cat.add_task(medium_task)
+
+    owner.add_pet(dog)
+    owner.add_pet(cat)
+
+    scheduler = Scheduler(owner)
+
+    assert scheduler.sort_tasks_by_priority() == [
+        high_early,
+        high_late,
+        medium_task,
+        low_task,
+    ]

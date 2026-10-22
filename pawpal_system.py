@@ -45,6 +45,7 @@ class Task:
 	due_time: datetime
 	is_complete: bool = False
 	frequency: str = "once"
+	priority: str = "medium"
 
 	def mark_complete(self) -> None:
 		"""Mark this task as complete."""
@@ -63,6 +64,22 @@ class Scheduler:
 		"""Return all tasks in stable due-time order."""
 		return sorted(self.get_all_tasks(), key=lambda task: task.due_time)
 
+	def sort_tasks_by_priority(self) -> list[Task]:
+		"""Sort tasks by priority first, then by due date and time."""
+		priority_order = {
+			"high": 0,
+			"medium": 1,
+			"low": 2,
+		}
+
+		return sorted(
+			self.get_all_tasks(),
+			key=lambda task: (
+				priority_order.get(task.priority.lower(), 1),
+				task.due_time,
+			),
+		)
+	
 	def filter_incomplete_tasks(self) -> list[Task]:
 		"""Return all tasks that are not complete."""
 		return [task for task in self.get_all_tasks() if not task.is_complete]
@@ -104,6 +121,7 @@ class Scheduler:
 			description=task.description,
 			due_time=task.due_time + delta,
 			frequency=task.frequency,
+			priority=task.priority,
 		)
 		pet.add_task(next_task)
 		return next_task

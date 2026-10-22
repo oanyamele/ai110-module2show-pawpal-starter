@@ -61,6 +61,41 @@ Incomplete Tasks (2)
 09:00  Luna: Brush coat (weekly)
 ```
 
+```
+# Challenge 3 Termimal Output:
+python main.py
+Today's Schedule (Wednesday, October 14, 2026)
+Owner: Alex Morgan | Tasks: 4
+DUE TIME             PET      TASK                  FREQUENCY      STATUS
+-------------------  -------  --------------------  -------------  ----------
+2026-10-14 07:30  Buddy    Morning walk          daily          Complete
+2026-10-14 07:30  Luna     Brush coat            weekly         Incomplete
+2026-10-14 08:00  Buddy    Breakfast             twice daily    Incomplete
+2026-10-15 07:30  Buddy    Morning walk          daily          Incomplete
+
+Next occurrence: Morning walk for Buddy at 2026-10-15 07:30
+
+Incomplete Tasks (3)
+08:00  Buddy: Breakfast (twice daily)
+07:30  Buddy: Morning walk (daily)
+07:30  Luna: Brush coat (weekly)
+
+Incomplete Buddy Tasks (2)
+2026-10-14 08:00  Breakfast
+2026-10-15 07:30  Morning walk
+
+Schedule Conflicts
+Schedule conflict at 2026-10-14 07:30:00: "Morning walk" for Buddy, "Brush coat" for Luna.
+
+Priority-Based Schedule
+PRIORITY  DUE TIME             PET      TASK
+--------  -------------------  -------  --------------------
+HIGH      2026-10-14 07:30  Buddy    Morning walk
+HIGH      2026-10-15 07:30  Buddy    Morning walk
+MEDIUM    2026-10-14 08:00  Buddy    Breakfast
+LOW       2026-10-14 07:30  Luna     Brush coat
+```
+
 ## 📐 Smarter Scheduling
 
 The `Scheduler` collects tasks across an owner's pets and provides these scheduling algorithms:
@@ -71,6 +106,8 @@ The `Scheduler` collects tasks across an owner's pets and provides these schedul
 | Filtering | `filter_tasks(pet_name, is_complete=None)` | Returns tasks for the named pet. Pass `True` or `False` to filter by completion status, or omit it to include both statuses. `filter_incomplete_tasks()` returns incomplete tasks across all pets. |
 | Recurring tasks | `mark_task_complete(pet, task)` | Verifies that the task belongs to the specified pet, marks it complete, then adds one next occurrence for `daily` (+1 day) or `weekly` (+7 days) tasks. One-time and unsupported frequencies do not recur; completing an already-completed task again does not add a duplicate. |
 | Conflict detection | `find_conflicts()` | Returns readable warning strings for tasks that share the exact same date and time, including their descriptions and pet names. Conflicts are reported rather than raised as errors. |
+
+| Priority-based scheduling | `sort_tasks_by_priority()` | Sorts tasks by priority (high, medium, low), then by due time. Includes tasks across all pets. |
 
 
 ## 🧪 Testing PawPal+
