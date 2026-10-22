@@ -79,14 +79,14 @@ Sample test output:
 
 ## 📐 Smarter Scheduling
 
-> Fill in once you've implemented scheduling logic.
+The `Scheduler` collects tasks across an owner's pets and provides these scheduling algorithms:
 
 | Feature | Method(s) | Notes |
 |---------|-----------|-------|
-| Task sorting | | e.g., by priority, duration |
-| Filtering | | e.g., skip tasks if time runs out |
-| Conflict handling | | e.g., overlapping time slots |
-| Recurring tasks | | e.g., daily vs. weekly |
+| Task sorting | `sort_tasks_by_due_time()` | Returns tasks in chronological due-time order. Python's stable sort preserves input order for tasks with equal due times. |
+| Filtering | `filter_tasks(pet_name, is_complete=None)` | Returns tasks for the named pet. Pass `True` or `False` to filter by completion status, or omit it to include both statuses. `filter_incomplete_tasks()` returns incomplete tasks across all pets. |
+| Recurring tasks | `mark_task_complete(pet, task)` | Verifies that the task belongs to the specified pet, marks it complete, then adds one next occurrence for `daily` (+1 day) or `weekly` (+7 days) tasks. One-time and unsupported frequencies do not recur; completing an already-completed task again does not add a duplicate. |
+| Conflict detection | `find_conflicts()` | Returns readable warning strings for tasks that share the exact same date and time, including their descriptions and pet names. Conflicts are reported rather than raised as errors. |
 
 ## 📸 Demo Walkthrough
 

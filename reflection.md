@@ -30,6 +30,8 @@ I updated the list_pets() and list_tasks() methods to return copies of internal 
 - Describe one tradeoff your scheduler makes.
 - Why is that tradeoff reasonable for this scenario?
 
+My find_conflicts() method groups tasks by their exact due date and time, allowing it to detect scheduling conflicts in O(n) time. I considered using collections.defaultdict(list) instead of setdefault() to make the grouping code shorter. However, the existing implementation is already efficient and easy to understand, so I decided to keep it. The scheduler also only detects tasks with identical start times, not tasks that overlap because of their durations.
+
 ---
 
 ## 3. AI Collaboration
