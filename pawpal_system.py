@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
+import json
+from pathlib import Path
 
 
 @dataclass
@@ -21,6 +23,108 @@ class Owner:
 	def list_tasks(self) -> list[Task]:
 		"""Return tasks belonging to all of this owner's pets."""
 		return [task for pet in self.list_pets() for task in pet.list_tasks()]
+
+	def save_to_json(self, file_path: str | Path) -> None:
+		"""Save this owner, pets, and tasks to a JSON file."""
+		data = {
+			"owner_id": self.owner_id,
+			"name": self.name,
+			"pets": [
+				{
+					"pet_id": pet.pet_id,
+					"name": pet.name,
+					"species": pet.species,
+					"tasks": [
+						{
+							"description": task.description,
+							"due_time": task.due_time.isoformat(),
+							"is_complete": task.is_complete,
+							"frequency": task.frequency,
+							"priority": task.priority,
+						}
+						for task in pet.list_tasks()
+					],
+				}
+				for pet in self.list_pets()
+			],
+		}
+		with Path(file_path).open("w", encoding="utf-8") as json_file:
+			json.dump(data, json_file, indent=2)
+			json_file.write("\n")
+
+	@classmethod
+	def load_from_json(cls, file_path: str | Path) -> Owner | None:
+		"""Load an owner from JSON, returning None if the file is missing."""
+		path = Path(file_path)
+		try:
+			with path.open(encoding="utf-8") as json_file:
+				data = json.load(json_file)
+		except FileNotFoundError:
+			return None
+		except json.JSONDecodeError as error:
+			raise ValueError(f"Invalid JSON in {path}: {error.msg}.") from error
+
+		if not isinstance(data, dict):
+			raise ValueError("Invalid owner data: expected a JSON object.")
+
+		def require_value(record: dict, key: str, expected_type: type) -> object:
+			value = record.get(key)
+			if not isinstance(value, expected_type) or (
+				expected_type is int and isinstance(value, bool)
+			):
+				raise ValueError(
+					f"Invalid owner data: '{key}' must be {expected_type.__name__}."
+				)
+			return value
+
+		owner_id = require_value(data, "owner_id", int)
+		name = require_value(data, "name", str)
+		pets_data = require_value(data, "pets", list)
+		pets = []
+		for pet_index, pet_data in enumerate(pets_data):
+			if not isinstance(pet_data, dict):
+				raise ValueError(f"Invalid owner data: pet at index {pet_index} must be an object.")
+			pet_id = require_value(pet_data, "pet_id", int)
+			pet_name = require_value(pet_data, "name", str)
+			species = require_value(pet_data, "species", str)
+			tasks_data = require_value(pet_data, "tasks", list)
+			tasks = []
+			for task_index, task_data in enumerate(tasks_data):
+				if not isinstance(task_data, dict):
+					raise ValueError(
+						f"Invalid owner data: task at pet index {pet_index}, "
+						f"task index {task_index} must be an object."
+					)
+				description = require_value(task_data, "description", str)
+				due_time_text = require_value(task_data, "due_time", str)
+				is_complete = require_value(task_data, "is_complete", bool)
+				frequency = require_value(task_data, "frequency", str)
+				priority = require_value(task_data, "priority", str)
+				try:
+					due_time = datetime.fromisoformat(due_time_text)
+				except ValueError as error:
+					raise ValueError(
+						f"Invalid owner data: invalid due_time for task "
+						f"'{description}'."
+					) from error
+				tasks.append(
+					Task(
+						description=description,
+						due_time=due_time,
+						is_complete=is_complete,
+						frequency=frequency,
+						priority=priority,
+					)
+				)
+			pets.append(
+				Pet(
+					pet_id=pet_id,
+					name=pet_name,
+					species=species,
+					tasks=tasks,
+				)
+			)
+		return cls(owner_id=owner_id, name=name, pets=pets)
 
 
 @dataclass

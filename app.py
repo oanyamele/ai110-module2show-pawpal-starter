@@ -1,18 +1,27 @@
 import streamlit as st
 
 from datetime import datetime, date
+from pathlib import Path
 from pawpal_system import Owner, Pet, Task, Scheduler
 
 st.set_page_config(page_title="PawPal+", page_icon="🐾", layout="centered")
 
+DATA_FILE = Path(__file__).resolve().parent / "data.json"
+
 if "owner" not in st.session_state:
-    st.session_state.owner = Owner(
-        owner_id=1,
-        name="Jordan",
-    )
+    try:
+        saved_owner = Owner.load_from_json(DATA_FILE)
+    except (OSError, ValueError) as error:
+        st.error(f"Could not load saved PawPal+ data: {error}")
+        st.stop()
+
+    st.session_state.owner = saved_owner or Owner(owner_id=1, name="Jordan")
 
 if "next_pet_id" not in st.session_state:
-    st.session_state.next_pet_id = 1
+    st.session_state.next_pet_id = max(
+        (pet.pet_id for pet in st.session_state.owner.list_pets()),
+        default=0,
+    ) + 1
 
 owner = st.session_state.owner
 
@@ -60,7 +69,9 @@ owner_name = st.text_input(
     key="owner_name_input",
 )
 
-owner.name = owner_name
+if owner.name != owner_name:
+    owner.name = owner_name
+    owner.save_to_json(DATA_FILE)
 
 pet_name = st.text_input("Pet name", value="Mochi")
 species = st.selectbox("Species", ["dog", "cat", "other"])
@@ -74,6 +85,7 @@ if st.button("Add Pet"):
         )
 
         owner.add_pet(new_pet)
+        owner.save_to_json(DATA_FILE)
         st.session_state.next_pet_id += 1
 
         st.success(f"{new_pet.name} was added!")
@@ -127,6 +139,7 @@ else:
             )
 
             selected_pet.add_task(new_task)
+            owner.save_to_json(DATA_FILE)
 
             st.success(
                 f"Added '{new_task.description}' for "
@@ -143,7 +156,7 @@ else:
         pet_tasks = pet.list_tasks()
 
         if pet_tasks:
-            for task in pet_tasks:
+            for task_index, task in enumerate(pet_tasks):
                 status = "Completed" if task.is_complete else "Pending"
 
                 st.write(
@@ -151,6 +164,14 @@ else:
                     f"{task.due_time.strftime('%b %d, %Y %I:%M %p')} "
                     f"({task.frequency}, {status})"
                 )
+
+                if not task.is_complete and st.button(
+                    f"Mark '{task.description}' complete",
+                    key=f"complete-{pet.pet_id}-{task_index}",
+                ):
+                    Scheduler(owner).mark_task_complete(pet, task)
+                    owner.save_to_json(DATA_FILE)
+                    st.rerun()
         else:
             st.caption("No tasks scheduled for this pet.")
 

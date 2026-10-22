@@ -259,3 +259,81 @@ def test_scheduler_sorts_by_priority_then_due_time() -> None:
         medium_task,
         low_task,
     ]
+
+
+def test_owner_json_round_trip_preserves_multiple_pets_and_task_fields(tmp_path) -> None:
+	due_time = datetime.fromisoformat("2026-10-14T08:30:45+00:00")
+	owner = Owner(7, "Alex")
+	dog = Pet(1, "Buddy", "Dog")
+	cat = Pet(2, "Luna", "Cat")
+	dog.add_task(
+		Task(
+			"Medication",
+			due_time,
+			is_complete=True,
+			frequency="daily",
+			priority="high",
+		)
+	)
+	cat.add_task(
+		Task(
+			"Grooming",
+			datetime(2026, 10, 15, 9, 15),
+			frequency="weekly",
+			priority="low",
+		)
+	)
+	owner.add_pet(dog)
+	owner.add_pet(cat)
+	file_path = tmp_path / "data.json"
+
+	owner.save_to_json(file_path)
+	restored_owner = Owner.load_from_json(file_path)
+
+	assert restored_owner is not None
+	assert (restored_owner.owner_id, restored_owner.name) == (7, "Alex")
+	restored_pets = restored_owner.list_pets()
+	assert [(pet.pet_id, pet.name, pet.species) for pet in restored_pets] == [
+		(1, "Buddy", "Dog"),
+		(2, "Luna", "Cat"),
+	]
+	restored_medication = restored_pets[0].list_tasks()[0]
+	assert restored_medication.description == "Medication"
+	assert restored_medication.due_time == due_time
+	assert restored_medication.due_time.tzinfo is not None
+	assert restored_medication.is_complete is True
+	assert restored_medication.frequency == "daily"
+	assert restored_medication.priority == "high"
+	restored_grooming = restored_pets[1].list_tasks()[0]
+	assert restored_grooming.due_time == datetime(2026, 10, 15, 9, 15)
+	assert restored_grooming.is_complete is False
+	assert restored_grooming.frequency == "weekly"
+	assert restored_grooming.priority == "low"
+
+
+def test_owner_load_from_json_returns_none_for_missing_file(tmp_path) -> None:
+	missing_file = tmp_path / "missing.json"
+
+	assert Owner.load_from_json(missing_file) is None
+
+
+def test_owner_load_from_json_rejects_malformed_json(tmp_path) -> None:
+	malformed_file = tmp_path / "malformed.json"
+	malformed_file.write_text("{not valid json", encoding="utf-8")
+
+	with pytest.raises(ValueError, match="Invalid JSON"):
+		Owner.load_from_json(malformed_file)
+
+
+def test_owner_load_from_json_rejects_invalid_task_datetime(tmp_path) -> None:
+	invalid_file = tmp_path / "invalid.json"
+	invalid_file.write_text(
+		'{"owner_id": 1, "name": "Alex", "pets": [{"pet_id": 1, '
+		'"name": "Buddy", "species": "Dog", "tasks": [{"description": '
+		'"Walk", "due_time": "not-a-date", "is_complete": false, '
+		'"frequency": "daily", "priority": "medium"}]}]}',
+		encoding="utf-8",
+	)
+
+	with pytest.raises(ValueError, match="invalid due_time"):
+		Owner.load_from_json(invalid_file)

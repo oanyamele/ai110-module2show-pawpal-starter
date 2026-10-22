@@ -1,0 +1,27 @@
+{
+  "owner_id": 1,
+  "name": "Mia",
+  "pets": [
+    {
+      "pet_id": 1,
+      "name": "Axe",
+      "species": "dog",
+      "tasks": [
+        {
+          "description": "Morning walk",
+          "due_time": "2026-10-22T17:31:00",
+          "is_complete": true,
+          "frequency": "daily",
+          "priority": "medium"
+        },
+        {
+          "description": "Morning walk",
+          "due_time": "2026-10-23T17:31:00",
+          "is_complete": false,
+          "frequency": "daily",
+          "priority": "medium"
+        }
+      ]
+    }
+  ]
+}

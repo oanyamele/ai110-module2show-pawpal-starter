@@ -109,6 +109,15 @@ The `Scheduler` collects tasks across an owner's pets and provides these schedul
 
 | Priority-based scheduling | `sort_tasks_by_priority()` | Sorts tasks by priority (high, medium, low), then by due time. Includes tasks across all pets. |
 
+## Data Persistence
+
+PawPal+ stores the owner, pets, and their tasks in `data.json` in the project directory. The Streamlit app loads this file when it starts; if it is not present, the app starts with a new owner. The path is resolved relative to `app.py`, so it is consistent regardless of the current working directory.
+
+`Owner.save_to_json(file_path)` writes the owner ID and name, pet details, and every task field (`description`, `due_time`, `is_complete`, `frequency`, and `priority`). Datetimes are stored as ISO 8601 strings. `Owner.load_from_json(file_path)` restores datetimes and the complete object hierarchy; it returns `None` for a missing file and raises a clear `ValueError` for malformed JSON or invalid data.
+
+The app saves after owner-name changes, adding pets or tasks, and completing tasks. Recurring occurrences created by task completion are included in the saved owner data.
+
+Automated tests in tests/test_pawpal.py verify that multiple pets and their task details survive a save-and-load round trip. Additional tests cover missing files, malformed JSON, and invalid task dates, and test are ran with python -m pytest
 
 ## 🧪 Testing PawPal+
 
@@ -149,3 +158,4 @@ View the schedule: Select a date and click Generate schedule. Tasks scheduled fo
 Check for conflicts: The scheduler checks tasks across the owner's pets and displays warnings when two or more tasks have exactly the same due date and time. If no conflicts are detected, the app displays a success message.
 
 **Screenshot or video** *(optional)*: <!-- Insert a screenshot or link to a demo video here -->
+
